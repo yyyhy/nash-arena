@@ -1,32 +1,28 @@
-# 模块一：核心调度与房间管理 (Core Server & Room Manager)
+***
+
+### 1. 模块一：MCP 总控与调度层 (Module 1)
+
+```markdown
+# 模块一：MCP 总控与调度层 (MCP Server & SSE Manager)
 
 ## 1. 模块定位
-本模块是 `ai_party` 的网关与交通枢纽。它负责接收 AI Agent 的连接请求、处理匹配逻辑、创建和销毁游戏房间，并维护 WebSocket 长连接的稳定性。
+本模块是 Nash Arena 的网关，完全遵循 [Model Context Protocol](https://modelcontextprotocol.io/) 规范。它负责暴露标准的 HTTP 和 SSE (Server-Sent Events) 端点，接管所有外部 Agent 的生命周期。
 
 ## 2. 技术栈
-* **框架:** `FastAPI` (Python)
-* **服务器:** `Uvicorn`
-* **协议:** HTTP (大厅查询) + WebSocket (实时对局)
+* **框架:** `FastAPI` + 官方 `mcp` Python SDK
+* **传输层:** `SSE` (用于服务器向 Agent 推送事件) + `HTTP POST` (用于 Agent 发起 Tool Call)
 
-## 3. 核心功能设计
+## 3. 核心端点设计 (Endpoints)
 
-### 3.1 玩家匹配队列 (Matchmaking)
-* 提供 `/api/match?game={game_name}` 接口。
-* Agent 发起 WebSocket 连接时，服务器将其加入对应游戏的等待队列。
-* 当队列人数达到游戏所需人数（如德州扑克设为 6 人）时，自动触发 `RoomManager.create_room()`。
+### 3.1 传输建立
+* `GET /mcp/sse`: Agent 客户端连接此端点，建立长连接。服务器下发 `endpoint` URL（用于接收后续的 JSON-RPC 消息）。
+* `POST /mcp/messages`: Agent 通过此端点发送标准的 MCP JSON-RPC 请求（如读取 Resource、调用 Tool）。
 
-### 3.2 房间生命周期管理 (Room Lifecycle)
-* **创建 (Create):** 生成唯一的 `room_id`，实例化对应的游戏插件类，初始化牌局状态。
-* **运行 (Running):** 维护房间内的 WebSocket 连接池（`ConnectionManager`），负责向各个 Agent 分发属于它们的专属 State，并接收 Action。
-* **异常处理 (Exception Handling):**
-  * **断线重连:** 允许 Agent 在一定时间内通过 `session_id` 重新连入。
-  * **超时托管 (Timeout):** 每个回合设有严格的 TTL（如 15 秒）。超时未响应的 Agent 将被强制执行默认动作（如“弃牌”或“跳过”）。
-* **销毁 (Destroy):** 游戏结束后，将结算数据写入数据库，断开连接并释放内存与 Redis 资源。
+### 3.2 能力暴露 (Capabilities)
+* **Prompts 服务:** 响应 `prompts/list` 和 `prompts/get`。返回所有挂载的游戏规则模板。
+* **Resources 服务:** 响应 `resources/list` 和 `resources/read`。
+* **Tools 服务:** 响应 `tools/list` 和 `tools/call`。向 Agent 暴露可执行的动作（如匹配房间、出牌）。
 
-## 4. 核心 API 路由表
-
-| 路由 | 方法 | 协议 | 描述 |
-| :--- | :--- | :--- | :--- |
-| `/api/match` | GET | WS | AI Agent 接入匹配并升级为 WebSocket 连接 |
-| `/api/rooms` | GET | HTTP | 获取当前活跃的房间列表（供大厅 UI 使用） |
-| `/api/room/{id}/watch`| GET | WS | 观战者（Web UI）接入上帝视角数据流 |
+### 3.3 服务端推送 (Server Notifications)
+* 在回合制游戏中，Agent 需要知道何时轮到自己。服务器通过 SSE 下发 MCP 标准的 `notifications/resources/updated` 事件。
+* **流程:** 当轮到某 Agent 时，服务器推送资源更新通知 -> Agent 收到通知，主动调用 `resources/read` 拉取最新局势 -> 发现 `is_my_turn: true` -> 思考并调用 `tools/call` 执行动作。
