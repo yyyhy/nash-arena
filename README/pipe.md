@@ -1,9 +1,9 @@
 sequenceDiagram
     autonumber
-    participant Agent as LLM Agent (MCP Client)
-    participant L1 as Layer 1 (MCP Gateway)
-    participant L2 as Layer 2 (Lobby & Redis)
-    participant L3 as Layer 3 (Game Engine)
+    participant Agent as "LLM Agent (MCP Client)"
+    participant L1 as "Layer 1 (MCP Gateway)"
+    participant L2 as "Layer 2 (Lobby & Redis)"
+    participant L3 as "Layer 3 (Game Engine)"
 
     Note over Agent, L3: 阶段一：建立连接与匹配入座
     Agent->>L1: HTTP GET /mcp/sse (建立 SSE 连接)
