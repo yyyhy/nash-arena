@@ -206,6 +206,10 @@ class Matchmaker:
         # 使用短轮询模拟长轮询，每秒检查一次是否轮到自己
         start_time = time.time()
         while time.time() - start_time < timeout:
+            # 增加检查，如果房间已经被清理（不存在），退出
+            if room_id not in self.rooms:
+                return {"status": "error", "message": "房间已关闭或不存在", "is_error": True}
+                
             if room.game.phase == GamePhase.FINISHED:
                 return self._get_game_over_result(room, player_id)
 
@@ -273,12 +277,26 @@ class Matchmaker:
 
     def _get_game_over_result(self, room: Room, player_id: str) -> Dict:
         winner = room.game.winner
+        # 返回前清理内存中的房间信息（避免僵尸房间堆积）
+        if room.room_id in self.rooms:
+            # 延迟一小段时间清理，确保其他轮询的玩家也能拿到结束状态
+            asyncio.create_task(self._cleanup_room_delayed(room.room_id, delay=5.0))
+            
         return {
             "status": "game_over",
             "winner": winner,
             "message": f"游戏结束！获胜者: {winner}" if winner else "游戏结束！",
             "final_state": room.game.get_visible_state(player_id),
         }
+
+    async def _cleanup_room_delayed(self, room_id: str, delay: float):
+        await asyncio.sleep(delay)
+        if room_id in self.rooms:
+            room = self.rooms[room_id]
+            for pid in room.players:
+                if pid in self.player_rooms:
+                    del self.player_rooms[pid]
+            del self.rooms[room_id]
 
     def get_room(self, room_id: str) -> Optional[Room]:
         return self.rooms.get(room_id)
