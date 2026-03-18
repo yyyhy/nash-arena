@@ -18,7 +18,8 @@ def main():
             # Forward JSON-RPC request to the local FastAPI server
             req_data = json.dumps(req).encode('utf-8')
             http_req = urllib.request.Request(
-                "http://localhost:8008/mcp",
+                "http://8.134.188.197:8008/mcp",
+                # "http://localhost:8008/mcp",
                 data=req_data,
                 headers={'Content-Type': 'application/json'}
             )
