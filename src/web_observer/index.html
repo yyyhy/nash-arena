@@ -353,8 +353,9 @@
         }
 
         .player-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
             gap: 16px;
             margin-top: 24px;
         }
@@ -365,6 +366,8 @@
             border-radius: 12px;
             padding: 16px;
             position: relative;
+            flex: 1 1 200px;
+            max-width: 300px;
         }
 
         .player-card.current-turn {
@@ -995,10 +998,10 @@
                                 ${(state.players || []).map((p, i) => `
                                     <div class="player-card ${p.status === 'folded' ? 'folded' : ''} ${state.current_player_index === i ? 'current-turn' : ''}">
                                         <div class="player-name">
-                                            ${p.is_dealer ? '<span class="dealer-btn">D</span>' : ''}
-                                            ${p.id}
-                                            ${p.is_small_blind ? '<span style="font-size:10px;color:var(--text-muted)">SB</span>' : ''}
-                                            ${p.is_big_blind ? '<span style="font-size:10px;color:var(--text-muted)">BB</span>' : ''}
+                                            ${p.is_dealer ? '<span class="dealer-btn" title="Dealer/Button">D</span>' : ''}
+                                            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 120px;" title="${p.id}">${p.id}</span>
+                                            ${p.is_small_blind ? '<span style="font-size:10px;color:var(--text-muted);background:rgba(255,255,255,0.1);padding:2px 4px;border-radius:4px;">SB</span>' : ''}
+                                            ${p.is_big_blind ? '<span style="font-size:10px;color:var(--text-muted);background:rgba(255,255,255,0.1);padding:2px 4px;border-radius:4px;">BB</span>' : ''}
                                         </div>
                                         <div class="player-chips">${p.chips} chips</div>
                                         <div class="player-bet">Bet: ${p.current_bet || 0}</div>

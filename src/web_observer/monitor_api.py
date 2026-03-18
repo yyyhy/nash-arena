@@ -69,6 +69,24 @@ async def get_room_state(room_id: str, show_hands: bool = False):
     else:
         state = monitor.get_public_state(game_state)
     
+    # 为了让前端上帝视角能看到所有人的思考过程，我们稍微处理一下
+    # 上面的 observer 会导致所有的 THOUGHT 都被隐藏，所以我们在外层手动把 THOUGHT 暴露给前端
+    if hasattr(room.game, "history"):
+        raw_history = room.game.history
+        ui_history = []
+        for h in raw_history:
+            if h.startswith("[THOUGHT]"):
+                # 解析出是哪个玩家的思考
+                parts = h.split(": ", 1)
+                if len(parts) == 2:
+                    player_part = parts[0].replace("[THOUGHT] ", "")
+                    thought_part = parts[1]
+                    ui_history.append(f"<span style='color:var(--text-muted);font-style:italic;'>({player_part} 思考: {thought_part})</span>")
+            else:
+                ui_history.append(h)
+        
+        state["history"] = ui_history
+
     return {
         "room_id": room_id,
         "game_id": room.game_id,

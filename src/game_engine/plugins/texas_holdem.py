@@ -164,15 +164,17 @@ class TexasHoldemGame(BaseMCPGame):
         
         if action.action == "fold":
             player.status = "folded"
-            thought = f" (思考: {action.thought_process})" if action.thought_process else ""
-            self.history.append(f"{player.id} folds{thought}")
+            self.history.append(f"{player.id} folds")
+            if action.thought_process:
+                self.history.append(f"[THOUGHT] {player.id}: {action.thought_process}")
             self._check_round_end()
             
         elif action.action == "check":
             if player.current_bet < self.current_bet:
                 return {"success": False, "error": f"当前下注额为{self.current_bet}，无法check，请call或raise"}
-            thought = f" (思考: {action.thought_process})" if action.thought_process else ""
-            self.history.append(f"{player.id} checks{thought}")
+            self.history.append(f"{player.id} checks")
+            if action.thought_process:
+                self.history.append(f"[THOUGHT] {player.id}: {action.thought_process}")
             self.actions_this_round += 1
             self._advance_player()
             self._check_round_end()
@@ -186,8 +188,9 @@ class TexasHoldemGame(BaseMCPGame):
             player.chips -= call_amount
             player.current_bet += call_amount
             self.pot += call_amount
-            thought = f" (思考: {action.thought_process})" if action.thought_process else ""
-            self.history.append(f"{player.id} calls {call_amount}{thought}")
+            self.history.append(f"{player.id} calls {call_amount}")
+            if action.thought_process:
+                self.history.append(f"[THOUGHT] {player.id}: {action.thought_process}")
             self.actions_this_round += 1
             self._advance_player()
             self._check_round_end()
@@ -206,8 +209,9 @@ class TexasHoldemGame(BaseMCPGame):
             self.current_bet = action.amount
             self.last_raiser_index = self.current_player_index
             self.actions_this_round = 1
-            thought = f" (思考: {action.thought_process})" if action.thought_process else ""
-            self.history.append(f"{player.id} raises to {action.amount}{thought}")
+            self.history.append(f"{player.id} raises to {action.amount}")
+            if action.thought_process:
+                self.history.append(f"[THOUGHT] {player.id}: {action.thought_process}")
             self._advance_player()
             self._check_round_end()
             
@@ -332,6 +336,19 @@ class TexasHoldemGame(BaseMCPGame):
         my_player = next((p for p in self.players if p.id == player_id), None)
         my_hand = my_player.hand if my_player else []
         
+        # 过滤掉其他人的思考过程，防止大模型作弊
+        visible_history = []
+        for h in self.history:
+            if h.startswith("[THOUGHT]"):
+                # 如果是自己的思考过程，或者是上帝视角（前端监控可能会传特定的player_id），则保留
+                # 这里简单处理：只要是自己的就保留
+                if h.startswith(f"[THOUGHT] {player_id}:"):
+                    # 把前缀去掉，恢复成普通的思考记录
+                    visible_history.append(f"(思考: {h.split(': ', 1)[1]})")
+                # 否则直接丢弃这条记录
+            else:
+                visible_history.append(h)
+        
         return {
             "players": players_state,
             "blinds": {"small": self.small_blind, "big": self.big_blind},
@@ -341,7 +358,7 @@ class TexasHoldemGame(BaseMCPGame):
             "your_hand": my_hand,
             "current_bet": self.current_bet,
             "betting_round": self.betting_round.value,
-            "history": self.history,
+            "history": visible_history,
         }
 
     @classmethod

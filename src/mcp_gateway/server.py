@@ -7,7 +7,7 @@ from pydantic import BaseModel
 
 from ..lobby_manager.matchmaker import Matchmaker
 from ..web_observer.monitor_api import router as monitor_router, init_monitor_api
-from ..data_storage.stats_api import router as stats_router
+# from ..data_storage.stats_api import router as stats_router
 
 
 class JSONRPCRequest(BaseModel):
@@ -46,7 +46,7 @@ class MCPGateway:
         
         init_monitor_api(self.matchmaker)
         self.app.include_router(monitor_router)
-        self.app.include_router(stats_router)
+        # self.app.include_router(stats_router)
         
         self._setup_routes()
         self._setup_tools()

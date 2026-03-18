@@ -53,7 +53,7 @@ class Matchmaker:
             room_id = self.player_rooms[player_id]
             room = self.rooms.get(room_id)
             if room and room.game.phase == GamePhase.IN_PROGRESS:
-                return await self._wait_for_turn(room, player_id, timeout)
+                return await self.get_game_state(room_id, player_id, timeout)
 
         queue = self.waiting_queues.get(game_id, [])
         now = time.time()
@@ -98,7 +98,7 @@ class Matchmaker:
                 room_id = self.player_rooms[player_id]
                 room = self.rooms.get(room_id)
                 if room and room.game.phase == GamePhase.IN_PROGRESS:
-                    return await self._wait_for_turn(room, player_id, timeout)
+                    return await self.get_game_state(room_id, player_id, timeout)
             return await self._wait_for_match(game_id, player_id, timeout)
 
         players_to_start = queue[:game_class.max_players]
@@ -132,6 +132,10 @@ class Matchmaker:
         for pid in room.players:
             if pid == current_player:
                 room.player_turn_events[pid].set()
+            else:
+                # 显式地唤醒其他不在当前回合的玩家，让他们能够立即收到进入房间的消息
+                room.player_turn_events[pid].set()
+                room.player_turn_events[pid].clear()
 
         if player_id == current_player:
             return {
@@ -141,7 +145,7 @@ class Matchmaker:
                 "state": game.get_visible_state(player_id),
             }
         else:
-            return await self._wait_for_turn(room, player_id, timeout)
+            return await self.get_game_state(room_id, player_id, timeout)
 
     async def _wait_for_match(self, game_id: str, player_id: str, timeout: float) -> Dict:
         start_time = time.time()
@@ -159,7 +163,7 @@ class Matchmaker:
                 room_id = self.player_rooms[player_id]
                 room = self.rooms.get(room_id)
                 if room and room.game.phase == GamePhase.IN_PROGRESS:
-                    return await self._wait_for_turn(room, player_id, timeout - (time.time() - start_time))
+                    return await self.get_game_state(room_id, player_id, timeout - (time.time() - start_time))
 
             game_class = GameRegistry.get_game_class(game_id)
             
@@ -171,12 +175,14 @@ class Matchmaker:
                     del self.matchmaking_timers[game_id]
 
             if queue:
-                if len(queue) >= game_class.max_players:
-                    return await self._try_start_game(game_id, player_id, timeout - (time.time() - start_time))
-                elif len(queue) >= game_class.min_players:
-                    timer_start = self.matchmaking_timers.get(game_id, time.time())
-                    if time.time() - timer_start >= MATCHMAKING_WAIT_TIME:
+                # 只有队列中的第一个人（房主）负责触发游戏开始，防止多人并发创建多个房间
+                if queue[0].player_id == player_id:
+                    if len(queue) >= game_class.max_players:
                         return await self._try_start_game(game_id, player_id, timeout - (time.time() - start_time))
+                    elif len(queue) >= game_class.min_players:
+                        timer_start = self.matchmaking_timers.get(game_id, time.time())
+                        if time.time() - timer_start >= MATCHMAKING_WAIT_TIME:
+                            return await self._try_start_game(game_id, player_id, timeout - (time.time() - start_time))
 
             await asyncio.sleep(check_interval)
 
@@ -186,46 +192,8 @@ class Matchmaker:
         }
 
     async def _wait_for_turn(self, room: Room, player_id: str, timeout: float) -> Dict:
-        if room.game.phase == GamePhase.FINISHED:
-            return self._get_game_over_result(room, player_id)
-
-        if room.game.is_player_turn(player_id):
-            return {
-                "status": "your_turn",
-                "room_id": room.room_id,
-                "message": "轮到你了！",
-                "state": room.game.get_visible_state(player_id),
-            }
-
-        if player_id not in room.player_turn_events:
-            room.player_turn_events[player_id] = asyncio.Event()
-
-        event = room.player_turn_events[player_id]
-        event.clear()
-
-        try:
-            await asyncio.wait_for(event.wait(), timeout=timeout)
-        except asyncio.TimeoutError:
-            return {
-                "status": "others_turn",
-                "message": "其他玩家正在思考，请继续调用 get_game_state 等待。",
-            }
-
-        if room.game.phase == GamePhase.FINISHED:
-            return self._get_game_over_result(room, player_id)
-
-        if room.game.is_player_turn(player_id):
-            return {
-                "status": "your_turn",
-                "room_id": room.room_id,
-                "message": "轮到你了！",
-                "state": room.game.get_visible_state(player_id),
-            }
-
-        return {
-            "status": "others_turn",
-            "message": "其他玩家正在思考，请继续调用 get_game_state 等待。",
-        }
+        # 该方法已弃用，统一使用 get_game_state 内部的轮询逻辑
+        return await self.get_game_state(room.room_id, player_id, timeout)
 
     async def get_game_state(self, room_id: str, player_id: str, timeout: float = 20.0) -> Dict:
         room = self.rooms.get(room_id)
@@ -235,7 +203,25 @@ class Matchmaker:
         if player_id not in room.players:
             return {"status": "error", "message": "你不是该房间的玩家", "is_error": True}
 
-        return await self._wait_for_turn(room, player_id, timeout)
+        # 使用短轮询模拟长轮询，每秒检查一次是否轮到自己
+        start_time = time.time()
+        while time.time() - start_time < timeout:
+            if room.game.phase == GamePhase.FINISHED:
+                return self._get_game_over_result(room, player_id)
+
+            if room.game.is_player_turn(player_id):
+                return {
+                    "status": "your_turn",
+                    "room_id": room.room_id,
+                    "message": "轮到你了！",
+                    "state": room.game.get_visible_state(player_id),
+                }
+            await asyncio.sleep(1.0)
+
+        return {
+            "status": "others_turn",
+            "message": "其他玩家正在思考，请继续调用 get_game_state 等待。",
+        }
 
     async def submit_action(self, room_id: str, player_id: str, action_data: str, timeout: float = 20.0) -> Dict:
         room = self.rooms.get(room_id)
@@ -263,19 +249,27 @@ class Matchmaker:
         if not result.get("success"):
             return {"status": "error", "message": result.get("error", "动作执行失败"), "is_error": True}
 
+        # 唤醒所有正在等待的玩家
         for pid in room.players:
             if pid in room.player_turn_events:
                 room.player_turn_events[pid].set()
-                room.player_turn_events[pid].clear()
 
+        # 这里不再使用 asyncio.Event 挂起，而是直接返回当前状态，让客户端发起 get_game_state
         if room.game.phase == GamePhase.FINISHED:
             return self._get_game_over_result(room, player_id)
 
-        current_player = room.game.get_current_player()
-        if current_player and current_player in room.player_turn_events:
-            room.player_turn_events[current_player].set()
+        if room.game.is_player_turn(player_id):
+             return {
+                "status": "your_turn",
+                "room_id": room.room_id,
+                "message": "动作成功！现在又轮到你了。",
+                "state": room.game.get_visible_state(player_id),
+            }
 
-        return await self._wait_for_turn(room, player_id, timeout)
+        return {
+            "status": "others_turn",
+            "message": "动作成功！当前轮到其他人行动，请调用 get_game_state 持续关注局势。",
+        }
 
     def _get_game_over_result(self, room: Room, player_id: str) -> Dict:
         winner = room.game.winner
