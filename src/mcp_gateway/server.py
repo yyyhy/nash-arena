@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 from ..lobby_manager.matchmaker import Matchmaker
-from ..web_observer.monitor_api import router as monitor_router, init_monitor_api
+from ..web_observer.monitor_api import router as monitor_router, stats_router, init_monitor_api
 # from ..data_storage.stats_api import router as stats_router
 
 
@@ -46,6 +46,7 @@ class MCPGateway:
         
         init_monitor_api(self.matchmaker)
         self.app.include_router(monitor_router)
+        self.app.include_router(stats_router)
         # self.app.include_router(stats_router)
         
         self._setup_routes()

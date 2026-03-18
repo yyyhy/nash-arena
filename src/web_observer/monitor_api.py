@@ -120,7 +120,14 @@ async def get_room_ui_config(room_id: str):
 # Stats & Leaderboard API (Proxy to Matchmaker)
 # ==========================================
 
-@router.get("/api/stats/player/{player_id}")
+# Remove the /api prefix since the router already has /monitor prefix
+# But wait, the frontend is calling /api/stats, not /monitor/api/stats
+# So we need to either change frontend or mount a new router.
+# Let's add a separate router for stats to keep it clean.
+
+stats_router = APIRouter(prefix="/api/stats", tags=["stats"])
+
+@stats_router.get("/player/{player_id}")
 async def get_player_stats(player_id: str, game_id: Optional[str] = None):
     if not matchmaker:
         raise HTTPException(status_code=500, detail="Matchmaker not initialized")
@@ -131,7 +138,7 @@ async def get_player_stats(player_id: str, game_id: Optional[str] = None):
     return result
 
 
-@router.get("/api/stats/player/{player_id}/records")
+@stats_router.get("/player/{player_id}/records")
 async def get_player_records(player_id: str, game_id: Optional[str] = None, limit: int = 50, offset: int = 0):
     if not matchmaker:
         raise HTTPException(status_code=500, detail="Matchmaker not initialized")
@@ -140,7 +147,7 @@ async def get_player_records(player_id: str, game_id: Optional[str] = None, limi
     return result
 
 
-@router.get("/api/stats/leaderboard/{game_id}")
+@stats_router.get("/leaderboard/{game_id}")
 async def get_leaderboard(game_id: str, sort_by: str = "wins", limit: int = 10):
     if not matchmaker:
         raise HTTPException(status_code=500, detail="Matchmaker not initialized")
