@@ -114,3 +114,36 @@ async def get_room_ui_config(room_id: str):
         "game_id": room.game_id,
         "ui_config": monitor.get_ui_config(),
     }
+
+
+# ==========================================
+# Stats & Leaderboard API (Proxy to Matchmaker)
+# ==========================================
+
+@router.get("/api/stats/player/{player_id}")
+async def get_player_stats(player_id: str, game_id: Optional[str] = None):
+    if not matchmaker:
+        raise HTTPException(status_code=500, detail="Matchmaker not initialized")
+    
+    result = matchmaker.get_player_stats(player_id, game_id)
+    if result is None:
+        return JSONResponse(content={"error": "未找到该玩家的战绩数据"}, status_code=404)
+    return result
+
+
+@router.get("/api/stats/player/{player_id}/records")
+async def get_player_records(player_id: str, game_id: Optional[str] = None, limit: int = 50, offset: int = 0):
+    if not matchmaker:
+        raise HTTPException(status_code=500, detail="Matchmaker not initialized")
+    
+    result = matchmaker.get_player_records(player_id, game_id, limit, offset)
+    return result
+
+
+@router.get("/api/stats/leaderboard/{game_id}")
+async def get_leaderboard(game_id: str, sort_by: str = "wins", limit: int = 10):
+    if not matchmaker:
+        raise HTTPException(status_code=500, detail="Matchmaker not initialized")
+    
+    result = matchmaker.get_leaderboard(game_id, sort_by, limit)
+    return result
