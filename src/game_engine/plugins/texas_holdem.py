@@ -164,13 +164,15 @@ class TexasHoldemGame(BaseMCPGame):
         
         if action.action == "fold":
             player.status = "folded"
-            self.history.append(f"{player.id} folds")
+            thought = f" (思考: {action.thought_process})" if action.thought_process else ""
+            self.history.append(f"{player.id} folds{thought}")
             self._check_round_end()
             
         elif action.action == "check":
             if player.current_bet < self.current_bet:
                 return {"success": False, "error": f"当前下注额为{self.current_bet}，无法check，请call或raise"}
-            self.history.append(f"{player.id} checks")
+            thought = f" (思考: {action.thought_process})" if action.thought_process else ""
+            self.history.append(f"{player.id} checks{thought}")
             self.actions_this_round += 1
             self._advance_player()
             self._check_round_end()
@@ -184,7 +186,8 @@ class TexasHoldemGame(BaseMCPGame):
             player.chips -= call_amount
             player.current_bet += call_amount
             self.pot += call_amount
-            self.history.append(f"{player.id} calls {call_amount}")
+            thought = f" (思考: {action.thought_process})" if action.thought_process else ""
+            self.history.append(f"{player.id} calls {call_amount}{thought}")
             self.actions_this_round += 1
             self._advance_player()
             self._check_round_end()
@@ -203,7 +206,8 @@ class TexasHoldemGame(BaseMCPGame):
             self.current_bet = action.amount
             self.last_raiser_index = self.current_player_index
             self.actions_this_round = 1
-            self.history.append(f"{player.id} raises to {action.amount}")
+            thought = f" (思考: {action.thought_process})" if action.thought_process else ""
+            self.history.append(f"{player.id} raises to {action.amount}{thought}")
             self._advance_player()
             self._check_round_end()
             

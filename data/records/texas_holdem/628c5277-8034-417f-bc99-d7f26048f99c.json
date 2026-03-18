@@ -1,0 +1,61 @@
+{
+  "record_id": "628c5277-8034-417f-bc99-d7f26048f99c",
+  "game_id": "texas_holdem",
+  "game_name": "德州扑克",
+  "room_id": "room_723abbcb",
+  "started_at": "2026-03-18T13:22:06.244025",
+  "ended_at": "2026-03-18T13:26:50.078336",
+  "duration_seconds": 283.834311,
+  "winner_id": "00:00:00:00:00:01",
+  "players": [
+    {
+      "player_id": "00:00:00:00:00:01",
+      "result": "win",
+      "initial_chips": 990,
+      "final_chips": 1240,
+      "chips_change": 250,
+      "hand": [
+        "D-K",
+        "S-10"
+      ],
+      "is_winner": true
+    },
+    {
+      "player_id": "trae-assistant",
+      "result": "lose",
+      "initial_chips": 980,
+      "final_chips": 760,
+      "chips_change": -220,
+      "hand": [
+        "C-A",
+        "H-9"
+      ],
+      "is_winner": false
+    }
+  ],
+  "final_pot": 680,
+  "community_cards": [
+    "C-8",
+    "C-10",
+    "D-2",
+    "H-10",
+    "H-2"
+  ],
+  "history": [
+    "00:00:00:00:00:01 posts small blind 10",
+    "trae-assistant posts big blind 20",
+    "00:00:00:00:00:01 calls 10",
+    "trae-assistant raises to 60",
+    "00:00:00:00:00:01 calls 40",
+    "--- FLOP ---",
+    "00:00:00:00:00:01 raises to 60",
+    "trae-assistant calls 60",
+    "--- TURN ---",
+    "00:00:00:00:00:01 raises to 120",
+    "trae-assistant calls 120",
+    "--- RIVER ---",
+    "00:00:00:00:00:01 raises to 200",
+    "trae-assistant folds",
+    "00:00:00:00:00:01 wins 680 (others folded)"
+  ]
+}

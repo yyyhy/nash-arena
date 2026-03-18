@@ -13,6 +13,7 @@ class WaitingPlayer:
     player_id: str
     game_id: str
     joined_at: float = field(default_factory=time.time)
+    last_seen: float = field(default_factory=time.time)
 
 
 @dataclass
@@ -32,6 +33,7 @@ class Matchmaker:
         self.waiting_queues: Dict[str, List[WaitingPlayer]] = {}
         self.rooms: Dict[str, Room] = {}
         self.player_rooms: Dict[str, str] = {}
+        self.matchmaking_timers: Dict[str, float] = {}
 
     def list_games(self) -> List[Dict]:
         return GameRegistry.list_games()
@@ -53,13 +55,36 @@ class Matchmaker:
             if room and room.game.phase == GamePhase.IN_PROGRESS:
                 return await self._wait_for_turn(room, player_id, timeout)
 
-        if game_id not in self.waiting_queues:
-            self.waiting_queues[game_id] = []
-
+        queue = self.waiting_queues.get(game_id, [])
+        now = time.time()
+        
+        # 清理超时的死连接玩家 (60秒未发请求)
+        self.waiting_queues[game_id] = [wp for wp in queue if now - wp.last_seen < 60.0]
         queue = self.waiting_queues[game_id]
-        queue.append(WaitingPlayer(player_id=player_id, game_id=game_id))
 
+        existing_wp = next((wp for wp in queue if wp.player_id == player_id), None)
+        if not existing_wp:
+            queue.append(WaitingPlayer(player_id=player_id, game_id=game_id, joined_at=now, last_seen=now))
+        else:
+            existing_wp.last_seen = now
+
+        # 更新匹配计时器
         if len(queue) >= game_class.min_players:
+            if game_id not in self.matchmaking_timers:
+                self.matchmaking_timers[game_id] = time.time()
+        else:
+            if game_id in self.matchmaking_timers:
+                del self.matchmaking_timers[game_id]
+
+        can_start = False
+        if len(queue) >= game_class.max_players:
+            can_start = True
+        elif len(queue) >= game_class.min_players:
+            timer_start = self.matchmaking_timers.get(game_id, time.time())
+            if time.time() - timer_start >= 10.0:  # 匹配窗口时间：达到最少人数后等待10秒
+                can_start = True
+
+        if can_start:
             return await self._try_start_game(game_id, player_id, timeout)
 
         return await self._wait_for_match(game_id, player_id, timeout)
@@ -69,10 +94,18 @@ class Matchmaker:
         game_class = GameRegistry.get_game_class(game_id)
 
         if len(queue) < game_class.min_players:
-            return {"status": "waiting", "message": "等待更多玩家..."}
+            if player_id in self.player_rooms:
+                room_id = self.player_rooms[player_id]
+                room = self.rooms.get(room_id)
+                if room and room.game.phase == GamePhase.IN_PROGRESS:
+                    return await self._wait_for_turn(room, player_id, timeout)
+            return await self._wait_for_match(game_id, player_id, timeout)
 
         players_to_start = queue[:game_class.max_players]
         self.waiting_queues[game_id] = queue[game_class.max_players:]
+        
+        if game_id in self.matchmaking_timers:
+            del self.matchmaking_timers[game_id]
 
         room_id = f"room_{uuid.uuid4().hex[:8]}"
         game = game_class(room_id)
@@ -113,27 +146,43 @@ class Matchmaker:
     async def _wait_for_match(self, game_id: str, player_id: str, timeout: float) -> Dict:
         start_time = time.time()
         check_interval = 0.5
+        MATCHMAKING_WAIT_TIME = 10.0
 
         while time.time() - start_time < timeout:
+            now = time.time()
+            queue = self.waiting_queues.get(game_id, [])
+            existing_wp = next((wp for wp in queue if wp.player_id == player_id), None)
+            if existing_wp:
+                existing_wp.last_seen = now
+
             if player_id in self.player_rooms:
                 room_id = self.player_rooms[player_id]
                 room = self.rooms.get(room_id)
                 if room and room.game.phase == GamePhase.IN_PROGRESS:
                     return await self._wait_for_turn(room, player_id, timeout - (time.time() - start_time))
 
-            queue = self.waiting_queues.get(game_id, [])
             game_class = GameRegistry.get_game_class(game_id)
+            
             if len(queue) >= game_class.min_players:
-                return await self._try_start_game(game_id, player_id, timeout - (time.time() - start_time))
+                if game_id not in self.matchmaking_timers:
+                    self.matchmaking_timers[game_id] = time.time()
+            else:
+                if game_id in self.matchmaking_timers:
+                    del self.matchmaking_timers[game_id]
+
+            if queue:
+                if len(queue) >= game_class.max_players:
+                    return await self._try_start_game(game_id, player_id, timeout - (time.time() - start_time))
+                elif len(queue) >= game_class.min_players:
+                    timer_start = self.matchmaking_timers.get(game_id, time.time())
+                    if time.time() - timer_start >= MATCHMAKING_WAIT_TIME:
+                        return await self._try_start_game(game_id, player_id, timeout - (time.time() - start_time))
 
             await asyncio.sleep(check_interval)
 
-        queue = self.waiting_queues.get(game_id, [])
-        self.waiting_queues[game_id] = [wp for wp in queue if wp.player_id != player_id]
-
         return {
             "status": "action_accepted_waiting",
-            "message": "已加入队列，等待匹配中。请调用 get_game_state 工具持续关注局势。",
+            "message": "已加入队列，等待匹配中。如果你还未匹配成功，请继续调用 join_game 轮询；如果已匹配成功但未轮到你，请调用 get_game_state 持续关注局势。",
         }
 
     async def _wait_for_turn(self, room: Room, player_id: str, timeout: float) -> Dict:

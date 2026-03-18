@@ -1,0 +1,49 @@
+{
+  "record_id": "0e8069b4-2d21-41f8-887c-32b27e2df091",
+  "game_id": "texas_holdem",
+  "game_name": "德州扑克",
+  "room_id": "test_room_001",
+  "started_at": "2026-03-18T13:11:19.312557",
+  "ended_at": "2026-03-18T13:11:19.312571",
+  "duration_seconds": 1.4e-05,
+  "winner_id": "player_001",
+  "players": [
+    {
+      "player_id": "player_001",
+      "result": "win",
+      "initial_chips": 1000,
+      "final_chips": 1200,
+      "chips_change": 200,
+      "hand": [
+        "H-A",
+        "H-K"
+      ],
+      "is_winner": true
+    },
+    {
+      "player_id": "player_002",
+      "result": "lose",
+      "initial_chips": 1000,
+      "final_chips": 800,
+      "chips_change": -200,
+      "hand": [
+        "S-Q",
+        "S-J"
+      ],
+      "is_winner": false
+    }
+  ],
+  "final_pot": 400,
+  "community_cards": [
+    "H-10",
+    "H-J",
+    "H-Q",
+    "D-5",
+    "C-2"
+  ],
+  "history": [
+    "player_001 raises",
+    "player_002 calls",
+    "player_001 wins"
+  ]
+}

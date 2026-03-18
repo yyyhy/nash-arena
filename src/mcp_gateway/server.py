@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from ..lobby_manager.matchmaker import Matchmaker
 from ..web_observer.monitor_api import router as monitor_router, init_monitor_api
+from ..data_storage.stats_api import router as stats_router
 
 
 class JSONRPCRequest(BaseModel):
@@ -45,6 +46,7 @@ class MCPGateway:
         
         init_monitor_api(self.matchmaker)
         self.app.include_router(monitor_router)
+        self.app.include_router(stats_router)
         
         self._setup_routes()
         self._setup_tools()
@@ -99,6 +101,45 @@ class MCPGateway:
                         },
                     },
                     "required": ["room_id", "mac_addr", "action_data"],
+                },
+            ),
+            "get_player_stats": MCPTool(
+                name="get_player_stats",
+                description="获取玩家的战绩统计。返回胜率、总场次、净赢筹码等统计数据。",
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "mac_addr": {"type": "string", "description": "玩家唯一标识符"},
+                        "game_id": {"type": "string", "description": "游戏ID（可选，不填则返回所有游戏的统计）"},
+                    },
+                    "required": ["mac_addr"],
+                },
+            ),
+            "get_player_records": MCPTool(
+                name="get_player_records",
+                description="获取玩家的历史对局记录。返回最近的对局详情列表。",
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "mac_addr": {"type": "string", "description": "玩家唯一标识符"},
+                        "game_id": {"type": "string", "description": "游戏ID（可选，不填则返回所有游戏的记录）"},
+                        "limit": {"type": "integer", "description": "返回记录数量限制，默认50", "default": 50},
+                        "offset": {"type": "integer", "description": "分页偏移量，默认0", "default": 0},
+                    },
+                    "required": ["mac_addr"],
+                },
+            ),
+            "get_leaderboard": MCPTool(
+                name="get_leaderboard",
+                description="获取游戏排行榜。按胜场、胜率或净赢筹码排序。",
+                input_schema={
+                    "type": "object",
+                    "properties": {
+                        "game_id": {"type": "string", "description": "游戏ID"},
+                        "sort_by": {"type": "string", "description": "排序方式：wins(胜场)、win_rate(胜率)、net_chips(净赢筹码)", "default": "wins"},
+                        "limit": {"type": "integer", "description": "返回数量限制，默认10", "default": 10},
+                    },
+                    "required": ["game_id"],
                 },
             ),
         }
@@ -235,6 +276,12 @@ class MCPGateway:
             return await self._tool_get_game_state(arguments)
         elif tool_name == "submit_action":
             return await self._tool_submit_action(arguments)
+        elif tool_name == "get_player_stats":
+            return await self._tool_get_player_stats(arguments)
+        elif tool_name == "get_player_records":
+            return await self._tool_get_player_records(arguments)
+        elif tool_name == "get_leaderboard":
+            return await self._tool_get_leaderboard(arguments)
         else:
             return {
                 "content": [{"type": "text", "text": f"Unknown tool: {tool_name}"}],
@@ -309,4 +356,46 @@ class MCPGateway:
         return {
             "content": [{"type": "text", "text": json.dumps(result, ensure_ascii=False)}],
             "isError": result.get("is_error", False),
+        }
+
+    async def _tool_get_player_stats(self, arguments: Dict) -> Dict:
+        mac_addr = arguments.get("mac_addr", "")
+        game_id = arguments.get("game_id")
+
+        result = self.matchmaker.get_player_stats(mac_addr, game_id)
+
+        if result is None:
+            return {
+                "content": [{"type": "text", "text": json.dumps({"error": "未找到该玩家的战绩数据"}, ensure_ascii=False)}],
+                "isError": True,
+            }
+
+        return {
+            "content": [{"type": "text", "text": json.dumps(result, ensure_ascii=False)}],
+            "isError": False,
+        }
+
+    async def _tool_get_player_records(self, arguments: Dict) -> Dict:
+        mac_addr = arguments.get("mac_addr", "")
+        game_id = arguments.get("game_id")
+        limit = arguments.get("limit", 50)
+        offset = arguments.get("offset", 0)
+
+        result = self.matchmaker.get_player_records(mac_addr, game_id, limit, offset)
+
+        return {
+            "content": [{"type": "text", "text": json.dumps(result, ensure_ascii=False)}],
+            "isError": False,
+        }
+
+    async def _tool_get_leaderboard(self, arguments: Dict) -> Dict:
+        game_id = arguments.get("game_id", "")
+        sort_by = arguments.get("sort_by", "wins")
+        limit = arguments.get("limit", 10)
+
+        result = self.matchmaker.get_leaderboard(game_id, sort_by, limit)
+
+        return {
+            "content": [{"type": "text", "text": json.dumps(result, ensure_ascii=False)}],
+            "isError": False,
         }

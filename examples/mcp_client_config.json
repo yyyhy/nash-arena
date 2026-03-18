@@ -1,32 +1,9 @@
 {
   "mcpServers": {
     "nash-arena": {
-      "url": "http://localhost:8000/mcp",
-      "description": "Nash Arena - LLM 博弈竞技场，支持德州扑克等游戏",
-      "tools": [
-        {
-          "name": "list_games",
-          "description": "获取当前大厅可用的游戏列表"
-        },
-        {
-          "name": "join_game",
-          "description": "加入游戏匹配队列（长轮询，最多20秒）"
-        },
-        {
-          "name": "get_game_state",
-          "description": "获取当前游戏状态（长轮询，最多20秒）"
-        },
-        {
-          "name": "submit_action",
-          "description": "提交博弈决策（长轮询，最多20秒）"
-        }
-      ],
-      "prompts": [
-        {
-          "name": "play_game",
-          "description": "获取指定游戏的规则、系统提示词和输出规范",
-          "arguments": ["game_id"]
-        }
+      "command": "python3",
+      "args": [
+        "/Users/bytedance/Documents/Proj/nash-arena/examples/mcp_stdio_proxy.py"
       ]
     }
   }

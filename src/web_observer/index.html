@@ -85,6 +85,39 @@
             color: var(--accent-gold);
         }
 
+        .nav-tabs {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .nav-tab {
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-tab:hover {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+
+        .nav-tab.active {
+            background: var(--bg-card);
+            color: var(--accent-gold);
+            border: 1px solid var(--border-color);
+        }
+
         .section-title {
             font-size: 11px;
             font-weight: 600;
@@ -296,6 +329,7 @@
         .stat-value.green { color: var(--accent-green); }
         .stat-value.blue { color: var(--accent-blue); }
         .stat-value.purple { color: var(--accent-purple); }
+        .stat-value.red { color: var(--accent-red); }
 
         .refresh-indicator {
             display: flex;
@@ -478,6 +512,271 @@
             to { transform: rotate(360deg); }
         }
 
+        /* Stats Page Styles */
+        .stats-page {
+            display: none;
+        }
+
+        .stats-page.active {
+            display: block;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-gold);
+        }
+
+        .search-input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .game-select {
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 14px;
+            font-family: inherit;
+            min-width: 150px;
+        }
+
+        .game-select:focus {
+            outline: none;
+            border-color: var(--accent-gold);
+        }
+
+        .player-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .player-stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .player-stat-card .stat-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .player-stat-card .stat-value {
+            font-size: 24px;
+        }
+
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .leaderboard-table th,
+        .leaderboard-table td {
+            padding: 14px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .leaderboard-table th {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .leaderboard-table td {
+            font-size: 14px;
+        }
+
+        .leaderboard-table tr:hover {
+            background: var(--bg-elevated);
+        }
+
+        .rank-badge {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 12px;
+        }
+
+        .rank-badge.gold {
+            background: linear-gradient(135deg, #d4af37, #b8860b);
+            color: var(--bg-primary);
+        }
+
+        .rank-badge.silver {
+            background: linear-gradient(135deg, #c0c0c0, #a0a0a0);
+            color: var(--bg-primary);
+        }
+
+        .rank-badge.bronze {
+            background: linear-gradient(135deg, #cd7f32, #a0522d);
+            color: var(--bg-primary);
+        }
+
+        .rank-badge.default {
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+        }
+
+        .records-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .record-item {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .record-item:hover {
+            border-color: var(--accent-gold);
+        }
+
+        .record-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .record-id {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .record-result {
+            padding: 4px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .record-result.win {
+            background: rgba(34, 197, 94, 0.2);
+            color: var(--accent-green);
+        }
+
+        .record-result.lose {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--accent-red);
+        }
+
+        .record-details {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            font-size: 13px;
+        }
+
+        .record-detail-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .record-detail-label {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .record-detail-value {
+            font-weight: 600;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 24px;
+            background: var(--bg-secondary);
+            padding: 4px;
+            border-radius: 10px;
+            width: fit-content;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+        }
+
+        .tab:hover {
+            color: var(--text-primary);
+        }
+
+        .tab.active {
+            background: var(--bg-card);
+            color: var(--accent-gold);
+        }
+
+        .sort-controls {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .sort-btn {
+            padding: 8px 16px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-secondary);
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .sort-btn:hover {
+            border-color: var(--accent-gold);
+            color: var(--text-primary);
+        }
+
+        .sort-btn.active {
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+            background: rgba(212, 175, 55, 0.1);
+        }
+
         @media (max-width: 768px) {
             .app-container {
                 grid-template-columns: 1fr;
@@ -501,7 +800,37 @@
                 <div class="logo-text">Nash <span>Arena</span></div>
             </div>
             
-            <div>
+            <nav class="nav-tabs">
+                <button class="nav-tab active" onclick="showPage('monitor')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="3" width="20" height="14" rx="2" ry="2"/>
+                        <line x1="8" y1="21" x2="16" y2="21"/>
+                        <line x1="12" y1="17" x2="12" y2="21"/>
+                    </svg>
+                    游戏监控
+                </button>
+                <button class="nav-tab" onclick="showPage('stats')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="20" x2="18" y2="10"/>
+                        <line x1="12" y1="20" x2="12" y2="4"/>
+                        <line x1="6" y1="20" x2="6" y2="14"/>
+                    </svg>
+                    战绩统计
+                </button>
+                <button class="nav-tab" onclick="showPage('leaderboard')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/>
+                        <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/>
+                        <path d="M4 22h16"/>
+                        <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/>
+                        <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/>
+                        <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/>
+                    </svg>
+                    排行榜
+                </button>
+            </nav>
+            
+            <div id="sidebarContent">
                 <div class="section-title">Active Rooms</div>
                 <div class="room-list" id="roomList">
                     <div class="empty-state">
@@ -512,43 +841,121 @@
         </aside>
         
         <main class="main-content">
-            <div class="header">
-                <h1>Game Monitor</h1>
-                <div class="header-actions">
-                    <div class="refresh-indicator">
-                        <span class="dot"></span>
-                        <span>Auto-refresh</span>
+            <!-- Monitor Page -->
+            <div id="monitorPage" class="page active">
+                <div class="header">
+                    <h1>游戏监控</h1>
+                    <div class="header-actions">
+                        <div class="refresh-indicator">
+                            <span class="dot"></span>
+                            <span>Auto-refresh</span>
+                        </div>
+                        <button class="btn btn-secondary" onclick="refreshAll()">Refresh</button>
                     </div>
-                    <button class="btn btn-secondary" onclick="refreshAll()">Refresh</button>
+                </div>
+                
+                <div class="stats-bar" id="statsBar">
+                    <div class="stat-card">
+                        <div class="stat-label">Active Rooms</div>
+                        <div class="stat-value blue" id="statRooms">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Players</div>
+                        <div class="stat-value purple" id="statPlayers">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Games In Progress</div>
+                        <div class="stat-value green" id="statInProgress">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Total Pots</div>
+                        <div class="stat-value gold" id="statPots">0</div>
+                    </div>
+                </div>
+                
+                <div class="monitor-container" id="monitorContainer">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                        </svg>
+                        <p>Select a room to view the game</p>
+                    </div>
                 </div>
             </div>
-            
-            <div class="stats-bar" id="statsBar">
-                <div class="stat-card">
-                    <div class="stat-label">Active Rooms</div>
-                    <div class="stat-value blue" id="statRooms">0</div>
+
+            <!-- Stats Page -->
+            <div id="statsPage" class="page">
+                <div class="header">
+                    <h1>战绩统计</h1>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-label">Total Players</div>
-                    <div class="stat-value purple" id="statPlayers">0</div>
+                
+                <div class="search-box">
+                    <input type="text" class="search-input" id="playerIdInput" placeholder="输入玩家ID查询战绩...">
+                    <select class="game-select" id="gameSelect">
+                        <option value="">所有游戏</option>
+                        <option value="texas_holdem">德州扑克</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="searchPlayerStats()">查询</button>
                 </div>
-                <div class="stat-card">
-                    <div class="stat-label">Games In Progress</div>
-                    <div class="stat-value green" id="statInProgress">0</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-label">Total Pots</div>
-                    <div class="stat-value gold" id="statPots">0</div>
+                
+                <div id="playerStatsContainer" style="display: none;">
+                    <div class="player-stats-grid" id="playerStatsGrid"></div>
+                    
+                    <div class="tabs">
+                        <button class="tab active" onclick="showStatsTab('records')">历史记录</button>
+                        <button class="tab" onclick="showStatsTab('details')">详细统计</button>
+                    </div>
+                    
+                    <div id="recordsTab">
+                        <div class="records-list" id="recordsList"></div>
+                    </div>
+                    
+                    <div id="detailsTab" style="display: none;">
+                        <div id="playerDetails"></div>
+                    </div>
                 </div>
             </div>
-            
-            <div class="monitor-container" id="monitorContainer">
-                <div class="empty-state">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-                        <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
-                    </svg>
-                    <p>Select a room to view the game</p>
+
+            <!-- Leaderboard Page -->
+            <div id="leaderboardPage" class="page">
+                <div class="header">
+                    <h1>排行榜</h1>
+                </div>
+                
+                <div class="search-box">
+                    <select class="game-select" id="leaderboardGameSelect">
+                        <option value="texas_holdem">德州扑克</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="loadLeaderboard()">加载排行榜</button>
+                </div>
+                
+                <div class="sort-controls">
+                    <button class="sort-btn active" onclick="sortLeaderboard('wins')">按胜场</button>
+                    <button class="sort-btn" onclick="sortLeaderboard('win_rate')">按胜率</button>
+                    <button class="sort-btn" onclick="sortLeaderboard('net_chips')">按净赢筹码</button>
+                </div>
+                
+                <div class="monitor-container">
+                    <div class="monitor-body">
+                        <table class="leaderboard-table">
+                            <thead>
+                                <tr>
+                                    <th>排名</th>
+                                    <th>玩家</th>
+                                    <th>场次</th>
+                                    <th>胜场</th>
+                                    <th>胜率</th>
+                                    <th>净赢筹码</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaderboardBody">
+                                <tr>
+                                    <td colspan="6" style="text-align: center; color: var(--text-muted);">点击"加载排行榜"查看数据</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
         </main>
@@ -558,6 +965,8 @@
         const API_BASE = 'http://localhost:8000';
         let selectedRoomId = null;
         let refreshInterval = null;
+        let currentPage = 'monitor';
+        let currentSortBy = 'wins';
 
         const GameMonitors = {
             texas_holdem: {
@@ -640,6 +1049,30 @@
             } catch (error) {
                 console.error(`API Error: ${endpoint}`, error);
                 return null;
+            }
+        }
+
+        function showPage(page) {
+            currentPage = page;
+            
+            document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+            
+            document.querySelector(`.nav-tab[onclick="showPage('${page}')"]`).classList.add('active');
+            document.getElementById(`${page}Page`).classList.add('active');
+            
+            if (page === 'monitor') {
+                document.getElementById('sidebarContent').innerHTML = `
+                    <div class="section-title">Active Rooms</div>
+                    <div class="room-list" id="roomList">
+                        <div class="empty-state"><p>No active rooms</p></div>
+                    </div>
+                `;
+                refreshAll();
+            } else if (page === 'stats') {
+                document.getElementById('sidebarContent').innerHTML = '';
+            } else if (page === 'leaderboard') {
+                document.getElementById('sidebarContent').innerHTML = '';
             }
         }
 
@@ -727,9 +1160,166 @@ ${JSON.stringify(data.state, null, 2)}
             }
         }
 
+        // Stats Page Functions
+        async function searchPlayerStats() {
+            const playerId = document.getElementById('playerIdInput').value.trim();
+            const gameId = document.getElementById('gameSelect').value;
+            
+            if (!playerId) {
+                alert('请输入玩家ID');
+                return;
+            }
+            
+            const stats = await fetchAPI(`/api/stats/player/${playerId}${gameId ? `?game_id=${gameId}` : ''}`);
+            
+            if (!stats || stats.error) {
+                alert('未找到该玩家的战绩数据');
+                return;
+            }
+            
+            document.getElementById('playerStatsContainer').style.display = 'block';
+            
+            // Render stats grid
+            const statsArray = Array.isArray(stats) ? stats : [stats];
+            const statsData = statsArray[0];
+            
+            document.getElementById('playerStatsGrid').innerHTML = `
+                <div class="player-stat-card">
+                    <div class="stat-label">总场次</div>
+                    <div class="stat-value blue">${statsData.total_games || 0}</div>
+                </div>
+                <div class="player-stat-card">
+                    <div class="stat-label">胜场</div>
+                    <div class="stat-value green">${statsData.wins || 0}</div>
+                </div>
+                <div class="player-stat-card">
+                    <div class="stat-label">败场</div>
+                    <div class="stat-value red">${statsData.losses || 0}</div>
+                </div>
+                <div class="player-stat-card">
+                    <div class="stat-label">胜率</div>
+                    <div class="stat-value gold">${statsData.win_rate || 0}%</div>
+                </div>
+                <div class="player-stat-card">
+                    <div class="stat-label">净赢筹码</div>
+                    <div class="stat-value ${statsData.net_chips >= 0 ? 'green' : 'red'}">${statsData.net_chips || 0}</div>
+                </div>
+                <div class="player-stat-card">
+                    <div class="stat-label">最大赢</div>
+                    <div class="stat-value green">${statsData.biggest_win || 0}</div>
+                </div>
+                <div class="player-stat-card">
+                    <div class="stat-label">最大输</div>
+                    <div class="stat-value red">${statsData.biggest_loss || 0}</div>
+                </div>
+                <div class="player-stat-card">
+                    <div class="stat-label">场均筹码</div>
+                    <div class="stat-value purple">${statsData.avg_chips_per_game || 0}</div>
+                </div>
+            `;
+            
+            // Load records
+            await loadPlayerRecords(playerId, gameId);
+        }
+
+        async function loadPlayerRecords(playerId, gameId) {
+            const records = await fetchAPI(`/api/stats/player/${playerId}/records${gameId ? `?game_id=${gameId}` : ''}`);
+            
+            if (!records || !records.records) {
+                document.getElementById('recordsList').innerHTML = '<p style="color:var(--text-muted)">暂无历史记录</p>';
+                return;
+            }
+            
+            document.getElementById('recordsList').innerHTML = records.records.map(record => {
+                const playerResult = record.players.find(p => p.player_id === playerId);
+                const isWin = playerResult && playerResult.is_winner;
+                
+                return `
+                    <div class="record-item">
+                        <div class="record-header">
+                            <span class="record-id">${record.room_id}</span>
+                            <span class="record-result ${isWin ? 'win' : 'lose'}">${isWin ? '胜利' : '失败'}</span>
+                        </div>
+                        <div class="record-details">
+                            <div class="record-detail-item">
+                                <span class="record-detail-label">游戏</span>
+                                <span class="record-detail-value">${record.game_name}</span>
+                            </div>
+                            <div class="record-detail-item">
+                                <span class="record-detail-label">筹码变化</span>
+                                <span class="record-detail-value" style="color: ${playerResult && playerResult.chips_change >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'}">
+                                    ${playerResult ? (playerResult.chips_change >= 0 ? '+' : '') + playerResult.chips_change : 0}
+                                </span>
+                            </div>
+                            <div class="record-detail-item">
+                                <span class="record-detail-label">底池</span>
+                                <span class="record-detail-value">${record.final_pot}</span>
+                            </div>
+                            <div class="record-detail-item">
+                                <span class="record-detail-label">时间</span>
+                                <span class="record-detail-value">${new Date(record.ended_at).toLocaleString()}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function showStatsTab(tab) {
+            document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
+            document.querySelector(`.tabs .tab[onclick="showStatsTab('${tab}')"]`).classList.add('active');
+            
+            document.getElementById('recordsTab').style.display = tab === 'records' ? 'block' : 'none';
+            document.getElementById('detailsTab').style.display = tab === 'details' ? 'block' : 'none';
+        }
+
+        // Leaderboard Page Functions
+        async function loadLeaderboard() {
+            const gameId = document.getElementById('leaderboardGameSelect').value;
+            const leaderboard = await fetchAPI(`/api/stats/leaderboard/${gameId}?sort_by=${currentSortBy}`);
+            
+            if (!leaderboard || !leaderboard.leaderboard) {
+                document.getElementById('leaderboardBody').innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">暂无数据</td></tr>';
+                return;
+            }
+            
+            document.getElementById('leaderboardBody').innerHTML = leaderboard.leaderboard.map(entry => {
+                let rankClass = 'default';
+                if (entry.rank === 1) rankClass = 'gold';
+                else if (entry.rank === 2) rankClass = 'silver';
+                else if (entry.rank === 3) rankClass = 'bronze';
+                
+                return `
+                    <tr>
+                        <td><span class="rank-badge ${rankClass}">${entry.rank}</span></td>
+                        <td style="font-weight: 600;">${entry.player_id}</td>
+                        <td>${entry.total_games}</td>
+                        <td style="color: var(--accent-green);">${entry.wins}</td>
+                        <td>${entry.win_rate}%</td>
+                        <td style="color: ${entry.net_chips >= 0 ? 'var(--accent-green)' : 'var(--accent-red)'};">
+                            ${entry.net_chips >= 0 ? '+' : ''}${entry.net_chips}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function sortLeaderboard(sortBy) {
+            currentSortBy = sortBy;
+            
+            document.querySelectorAll('.sort-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`.sort-btn[onclick="sortLeaderboard('${sortBy}')"]`).classList.add('active');
+            
+            loadLeaderboard();
+        }
+
         function startAutoRefresh() {
             if (refreshInterval) clearInterval(refreshInterval);
-            refreshInterval = setInterval(refreshAll, 2000);
+            refreshInterval = setInterval(() => {
+                if (currentPage === 'monitor') {
+                    refreshAll();
+                }
+            }, 2000);
         }
 
         document.addEventListener('DOMContentLoaded', () => {
