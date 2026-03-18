@@ -279,8 +279,8 @@ class Matchmaker:
         winner = room.game.winner
         # 返回前清理内存中的房间信息（避免僵尸房间堆积）
         if room.room_id in self.rooms:
-            # 延迟一小段时间清理，确保其他轮询的玩家也能拿到结束状态
-            asyncio.create_task(self._cleanup_room_delayed(room.room_id, delay=5.0))
+            # 延迟更长时间清理（比如 30 秒），以便在前端监控中能看到对局结束状态
+            asyncio.create_task(self._cleanup_room_delayed(room.room_id, delay=30.0))
             
         return {
             "status": "game_over",

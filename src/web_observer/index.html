@@ -965,7 +965,7 @@
     </div>
 
     <script>
-        const API_BASE = 'http://localhost:8000';
+        const API_BASE = ''; // Use relative path to support any port
         let selectedRoomId = null;
         let refreshInterval = null;
         let currentPage = 'monitor';
@@ -1138,7 +1138,19 @@
             const data = await fetchAPI(`/monitor/room/${roomId}?show_hands=true`);
             
             if (!data) {
-                container.innerHTML = '<div class="empty-state"><p>Failed to load room data</p></div>';
+                // If room doesn't exist anymore, clear selection and refresh list
+                if (selectedRoomId === roomId) {
+                    selectedRoomId = null;
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                                <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                                <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                            </svg>
+                            <p>Select a room to view the game</p>
+                        </div>
+                    `;
+                }
                 return;
             }
             
