@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nash Arena Monitor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-primary: #0a0a0f;
+            --bg-secondary: #12121a;
+            --bg-card: #1a1a24;
+            --bg-elevated: #22222e;
+            --text-primary: #e8e8ec;
+            --text-secondary: #8888a0;
+            --text-muted: #555566;
+            --accent-gold: #d4af37;
+            --accent-green: #22c55e;
+            --accent-red: #ef4444;
+            --accent-blue: #3b82f6;
+            --accent-purple: #a855f7;
+            --border-color: #2a2a3a;
+            --shadow-glow: 0 0 40px rgba(212, 175, 55, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            background: var(--bg-secondary);
+            border-right: 1px solid var(--border-color);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--accent-gold), #b8860b);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--bg-primary);
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .logo-text span {
+            color: var(--accent-gold);
+        }
+
+        .section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .room-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            flex: 1;
+            overflow-y: auto;
+        }
+
+        .room-item {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 14px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .room-item:hover {
+            border-color: var(--accent-gold);
+            transform: translateX(4px);
+        }
+
+        .room-item.active {
+            border-color: var(--accent-gold);
+            background: var(--bg-elevated);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .room-id {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            color: var(--accent-gold);
+            margin-bottom: 6px;
+        }
+
+        .room-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .room-phase {
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .room-phase.in_progress { background: rgba(34, 197, 94, 0.2); color: var(--accent-green); }
+        .room-phase.waiting { background: rgba(59, 130, 246, 0.2); color: var(--accent-blue); }
+        .room-phase.finished { background: rgba(136, 136, 160, 0.2); color: var(--text-secondary); }
+
+        .main-content {
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: var(--accent-gold);
+            color: var(--bg-primary);
+        }
+
+        .btn-primary:hover {
+            background: #c9a227;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: var(--bg-card);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--accent-gold);
+        }
+
+        .monitor-container {
+            flex: 1;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .monitor-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .monitor-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .monitor-title h2 {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .game-badge {
+            padding: 4px 12px;
+            background: rgba(212, 175, 55, 0.15);
+            color: var(--accent-gold);
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .monitor-body {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+        }
+
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-muted);
+            gap: 16px;
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            opacity: 0.3;
+        }
+
+        .empty-state p {
+            font-size: 14px;
+        }
+
+        .stats-bar {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-value.gold { color: var(--accent-gold); }
+        .stat-value.green { color: var(--accent-green); }
+        .stat-value.blue { color: var(--accent-blue); }
+        .stat-value.purple { color: var(--accent-purple); }
+
+        .refresh-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .refresh-indicator .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .player-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-top: 24px;
+        }
+
+        .player-card {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            position: relative;
+        }
+
+        .player-card.current-turn {
+            border-color: var(--accent-gold);
+            box-shadow: 0 0 20px rgba(212, 175, 55, 0.2);
+        }
+
+        .player-card.folded {
+            opacity: 0.5;
+        }
+
+        .player-name {
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .player-name .dealer-btn {
+            width: 20px;
+            height: 20px;
+            background: var(--accent-gold);
+            color: var(--bg-primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .player-chips {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: var(--accent-gold);
+        }
+
+        .player-bet {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 4px;
+        }
+
+        .player-cards {
+            display: flex;
+            gap: 6px;
+            margin-top: 12px;
+        }
+
+        .card {
+            width: 36px;
+            height: 50px;
+            background: linear-gradient(135deg, #fff 0%, #f0f0f0 100%);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .card.red { color: var(--accent-red); }
+        .card.black { color: #1a1a1a; }
+        .card.hidden { background: linear-gradient(135deg, #1a472a 0%, #0d2818 100%); }
+
+        .community-cards {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            padding: 24px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            margin: 24px 0;
+        }
+
+        .community-cards .card {
+            width: 56px;
+            height: 78px;
+            font-size: 16px;
+        }
+
+        .pot-display {
+            text-align: center;
+            padding: 16px;
+            background: rgba(212, 175, 55, 0.1);
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .pot-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+
+        .pot-value {
+            font-size: 36px;
+            font-weight: 700;
+            color: var(--accent-gold);
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .history-timeline {
+            max-height: 200px;
+            overflow-y: auto;
+            border-top: 1px solid var(--border-color);
+            padding-top: 16px;
+            margin-top: 24px;
+        }
+
+        .history-item {
+            display: flex;
+            gap: 12px;
+            padding: 8px 0;
+            font-size: 13px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-player {
+            font-weight: 600;
+            min-width: 120px;
+        }
+
+        .history-action {
+            color: var(--text-secondary);
+        }
+
+        .loading-spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border-color);
+            border-top-color: var(--accent-gold);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        @media (max-width: 768px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                display: none;
+            }
+            
+            .stats-bar {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">N</div>
+                <div class="logo-text">Nash <span>Arena</span></div>
+            </div>
+            
+            <div>
+                <div class="section-title">Active Rooms</div>
+                <div class="room-list" id="roomList">
+                    <div class="empty-state">
+                        <p>No active rooms</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+        
+        <main class="main-content">
+            <div class="header">
+                <h1>Game Monitor</h1>
+                <div class="header-actions">
+                    <div class="refresh-indicator">
+                        <span class="dot"></span>
+                        <span>Auto-refresh</span>
+                    </div>
+                    <button class="btn btn-secondary" onclick="refreshAll()">Refresh</button>
+                </div>
+            </div>
+            
+            <div class="stats-bar" id="statsBar">
+                <div class="stat-card">
+                    <div class="stat-label">Active Rooms</div>
+                    <div class="stat-value blue" id="statRooms">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Players</div>
+                    <div class="stat-value purple" id="statPlayers">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Games In Progress</div>
+                    <div class="stat-value green" id="statInProgress">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total Pots</div>
+                    <div class="stat-value gold" id="statPots">0</div>
+                </div>
+            </div>
+            
+            <div class="monitor-container" id="monitorContainer">
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                        <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                    </svg>
+                    <p>Select a room to view the game</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        let selectedRoomId = null;
+        let refreshInterval = null;
+
+        const GameMonitors = {
+            texas_holdem: {
+                render(state, uiConfig) {
+                    return `
+                        <div class="monitor-header">
+                            <div class="monitor-title">
+                                <h2>Texas Hold'em</h2>
+                                <span class="game-badge">${state.betting_round || 'waiting'}</span>
+                            </div>
+                            <div class="room-id" style="font-family: 'JetBrains Mono', monospace; color: var(--text-secondary);">
+                                ${state.room_id || ''}
+                            </div>
+                        </div>
+                        <div class="monitor-body">
+                            <div class="pot-display">
+                                <div class="pot-label">Total Pot</div>
+                                <div class="pot-value">${state.pot || 0}</div>
+                            </div>
+                            
+                            <div class="community-cards">
+                                ${renderCards(state.community_cards || [], false)}
+                            </div>
+                            
+                            <div class="player-grid">
+                                ${(state.players || []).map((p, i) => `
+                                    <div class="player-card ${p.status === 'folded' ? 'folded' : ''} ${state.current_player_index === i ? 'current-turn' : ''}">
+                                        <div class="player-name">
+                                            ${p.is_dealer ? '<span class="dealer-btn">D</span>' : ''}
+                                            ${p.id}
+                                            ${p.is_small_blind ? '<span style="font-size:10px;color:var(--text-muted)">SB</span>' : ''}
+                                            ${p.is_big_blind ? '<span style="font-size:10px;color:var(--text-muted)">BB</span>' : ''}
+                                        </div>
+                                        <div class="player-chips">${p.chips} chips</div>
+                                        <div class="player-bet">Bet: ${p.current_bet || 0}</div>
+                                        <div class="player-cards">
+                                            ${renderCards(p.hand || [], false)}
+                                        </div>
+                                    </div>
+                                `).join('')}
+                            </div>
+                            
+                            <div class="history-timeline">
+                                <div class="section-title">Action History</div>
+                                ${(state.history || []).map(h => `
+                                    <div class="history-item">
+                                        <span class="history-action">${h}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        };
+
+        function renderCards(cards, hidden) {
+            if (!cards || cards.length === 0) {
+                return '<div style="color:var(--text-muted);font-size:12px;">No cards</div>';
+            }
+            
+            return cards.map(card => {
+                if (hidden) {
+                    return '<div class="card hidden"></div>';
+                }
+                
+                const [suit, rank] = card.split('-');
+                const isRed = suit === 'H' || suit === 'D';
+                const suitSymbol = {H: '♥', D: '♦', C: '♣', S: '♠'}[suit] || suit;
+                
+                return `<div class="card ${isRed ? 'red' : 'black'}">${rank}${suitSymbol}</div>`;
+            }).join('');
+        }
+
+        async function fetchAPI(endpoint) {
+            try {
+                const response = await fetch(`${API_BASE}${endpoint}`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                return await response.json();
+            } catch (error) {
+                console.error(`API Error: ${endpoint}`, error);
+                return null;
+            }
+        }
+
+        async function refreshAll() {
+            const roomsData = await fetchAPI('/monitor/rooms');
+            
+            if (roomsData && roomsData.rooms) {
+                renderRoomList(roomsData.rooms);
+                updateStats(roomsData.rooms);
+            }
+            
+            if (selectedRoomId) {
+                await refreshRoomState(selectedRoomId);
+            }
+        }
+
+        function renderRoomList(rooms) {
+            const container = document.getElementById('roomList');
+            
+            if (rooms.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>No active rooms</p></div>';
+                return;
+            }
+            
+            container.innerHTML = rooms.map(room => `
+                <div class="room-item ${room.room_id === selectedRoomId ? 'active' : ''}" 
+                     onclick="selectRoom('${room.room_id}')">
+                    <div class="room-id">${room.room_id}</div>
+                    <div class="room-meta">
+                        <span>${room.players.length} players</span>
+                        <span class="room-phase ${room.phase}">${room.phase}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateStats(rooms) {
+            document.getElementById('statRooms').textContent = rooms.length;
+            
+            const totalPlayers = rooms.reduce((sum, r) => sum + r.players.length, 0);
+            document.getElementById('statPlayers').textContent = totalPlayers;
+            
+            const inProgress = rooms.filter(r => r.phase === 'in_progress').length;
+            document.getElementById('statInProgress').textContent = inProgress;
+        }
+
+        async function selectRoom(roomId) {
+            selectedRoomId = roomId;
+            
+            document.querySelectorAll('.room-item').forEach(el => {
+                el.classList.toggle('active', el.querySelector('.room-id').textContent === roomId);
+            });
+            
+            await refreshRoomState(roomId);
+        }
+
+        async function refreshRoomState(roomId) {
+            const container = document.getElementById('monitorContainer');
+            
+            const data = await fetchAPI(`/monitor/room/${roomId}?show_hands=true`);
+            
+            if (!data) {
+                container.innerHTML = '<div class="empty-state"><p>Failed to load room data</p></div>';
+                return;
+            }
+            
+            const monitor = GameMonitors[data.game_id];
+            
+            if (monitor) {
+                container.innerHTML = monitor.render(data.state, data.ui_config);
+            } else {
+                container.innerHTML = `
+                    <div class="monitor-header">
+                        <div class="monitor-title">
+                            <h2>${data.game_id}</h2>
+                            <span class="game-badge">Unknown Game</span>
+                        </div>
+                    </div>
+                    <div class="monitor-body">
+                        <pre style="background:var(--bg-secondary);padding:16px;border-radius:8px;overflow:auto;">
+${JSON.stringify(data.state, null, 2)}
+                        </pre>
+                    </div>
+                `;
+            }
+        }
+
+        function startAutoRefresh() {
+            if (refreshInterval) clearInterval(refreshInterval);
+            refreshInterval = setInterval(refreshAll, 2000);
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            refreshAll();
+            startAutoRefresh();
+        });
+    </script>
+</body>
+</html>
