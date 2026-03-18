@@ -1012,7 +1012,7 @@
                                 `).join('')}
                             </div>
                             
-                            <div class="history-timeline">
+                            <div class="history-timeline" id="historyTimeline">
                                 <div class="section-title">Action History</div>
                                 ${(state.history || []).map(h => `
                                     <div class="history-item">
@@ -1158,6 +1158,11 @@
             
             if (monitor) {
                 container.innerHTML = monitor.render(data.state, data.ui_config);
+                // 渲染完后，自动滚动 Action History 到最底部
+                const timeline = document.getElementById('historyTimeline');
+                if (timeline) {
+                    timeline.scrollTop = timeline.scrollHeight;
+                }
             } else {
                 container.innerHTML = `
                     <div class="monitor-header">

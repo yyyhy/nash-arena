@@ -42,7 +42,7 @@ def main():
                         "jsonrpc": "2.0",
                         "error": {
                             "code": -32603, 
-                            "message": f"HTTP request failed: {e}. Is the Nash Arena backend server running at http://localhost:8000?"
+                            "message": f"HTTP request failed: {e}. Is the Nash Arena backend server running at http://localhost:8008?"
                         },
                         "id": req.get("id")
                     }

@@ -2,7 +2,7 @@ import asyncio
 import json
 import httpx
 
-BASE_URL = "http://localhost:8000"
+BASE_URL = "http://localhost:8008"
 
 
 async def test_game():

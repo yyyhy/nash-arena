@@ -15,7 +15,7 @@ async def main():
     4. get_game_state - 获取游戏状态（长轮询，最多20秒）
     5. submit_action - 提交博弈决策（长轮询，最多20秒）
     """
-    url = "http://localhost:8000/mcp"
+    url = "http://localhost:8008/mcp"
     
     async with streamablehttp_client(url) as (read_stream, write_stream, _):
         async with ClientSession(read_stream, write_stream) as session:
