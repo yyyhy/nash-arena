@@ -34,6 +34,12 @@ class Matchmaker:
         self.rooms: Dict[str, Room] = {}
         self.player_rooms: Dict[str, str] = {}
         self.matchmaking_timers: Dict[str, float] = {}
+        
+        # Simple in-memory stats storage
+        # { player_id: { "wins": 0, "total_games": 0, "net_chips": 0 } }
+        self.player_stats: Dict[str, Dict] = {}
+        # { game_id: [ { "winner": ..., "players": ..., "timestamp": ... } ] }
+        self.game_records: Dict[str, List[Dict]] = {}
 
     def list_games(self) -> List[Dict]:
         return GameRegistry.list_games()
@@ -279,6 +285,9 @@ class Matchmaker:
         winner = room.game.winner
         # 返回前清理内存中的房间信息（避免僵尸房间堆积）
         if room.room_id in self.rooms:
+            # 记录战绩
+            self._record_game_stats(room)
+            
             # 延迟更长时间清理（比如 30 秒），以便在前端监控中能看到对局结束状态
             asyncio.create_task(self._cleanup_room_delayed(room.room_id, delay=30.0))
             
@@ -288,6 +297,55 @@ class Matchmaker:
             "message": f"游戏结束！获胜者: {winner}" if winner else "游戏结束！",
             "final_state": room.game.get_visible_state(player_id),
         }
+
+    def _record_game_stats(self, room: Room):
+        # 防止重复记录
+        if getattr(room, "stats_recorded", False):
+            return
+        room.stats_recorded = True
+
+        game_id = room.game_id
+        if game_id not in self.game_records:
+            self.game_records[game_id] = []
+        
+        # 记录对局详情
+        record = {
+            "room_id": room.room_id,
+            "timestamp": time.time(),
+            "winner": room.game.winner,
+            "players": list(room.players),
+            # 这里简化处理，只记录最终筹码变动（需要在BaseGame中实现get_results）
+            "results": {} 
+        }
+        
+        # 更新每个玩家的累计数据
+        # 假设 room.game.players 是 Player 对象列表，包含 chips 属性
+        # 对于德州扑克，我们需要计算净胜筹码。但这需要知道初始筹码。
+        # 简化起见，我们假设 winner 赢 +1，其他人赢 0 (或者根据实际筹码)
+        
+        # 尝试从 game 对象获取详细结果，如果没有则使用简易逻辑
+        results = {}
+        if hasattr(room.game, "get_results"):
+            results = room.game.get_results()
+        else:
+            # Fallback: winner gets point
+            for pid in room.players:
+                results[pid] = {"net_chips": 0}
+            if room.game.winner:
+                results[room.game.winner]["net_chips"] = 100 # Mock value
+
+        record["results"] = results
+        self.game_records[game_id].append(record)
+        
+        for pid, data in results.items():
+            if pid not in self.player_stats:
+                self.player_stats[pid] = {"wins": 0, "total_games": 0, "net_chips": 0}
+            
+            stats = self.player_stats[pid]
+            stats["total_games"] += 1
+            if pid == room.game.winner:
+                stats["wins"] += 1
+            stats["net_chips"] += data.get("net_chips", 0)
 
     async def _cleanup_room_delayed(self, room_id: str, delay: float):
         await asyncio.sleep(delay)
@@ -300,3 +358,79 @@ class Matchmaker:
 
     def get_room(self, room_id: str) -> Optional[Room]:
         return self.rooms.get(room_id)
+
+    def get_player_stats(self, player_id: str, game_id: Optional[str] = None) -> Optional[Dict]:
+        stats = self.player_stats.get(player_id, {"wins": 0, "total_games": 0, "net_chips": 0})
+        total = stats["total_games"]
+        win_rate = (stats["wins"] / total * 100) if total > 0 else 0.0
+        
+        return {
+            "player_id": player_id,
+            "total_games": total,
+            "wins": stats["wins"],
+            "win_rate": round(win_rate, 1),
+            "net_chips": stats["net_chips"],
+            "rank": "Silver" if total > 10 else "Bronze" # Mock rank logic
+        }
+
+    def get_player_records(self, player_id: str, game_id: Optional[str] = None, limit: int = 50, offset: int = 0) -> Dict:
+        # 查找该玩家参与的所有游戏记录
+        all_records = []
+        if game_id:
+            all_records = self.game_records.get(game_id, [])
+        else:
+            for gid, records in self.game_records.items():
+                all_records.extend(records)
+        
+        # 过滤玩家
+        player_records = [r for r in all_records if player_id in r["players"]]
+        # 按时间倒序
+        player_records.sort(key=lambda x: x["timestamp"], reverse=True)
+        
+        # 分页
+        paged_records = player_records[offset : offset + limit]
+        
+        return {
+            "player_id": player_id,
+            "records": paged_records,
+            "total": len(player_records),
+            "limit": limit,
+            "offset": offset
+        }
+
+    def get_leaderboard(self, game_id: str, sort_by: str = "wins", limit: int = 10) -> Dict:
+        # 从 player_stats 构建排行榜
+        # 注意：这里我们简单遍历所有玩家，实际生产中应该按游戏分别统计
+        leaderboard = []
+        for pid, stats in self.player_stats.items():
+            total = stats["total_games"]
+            if total == 0: continue
+            
+            win_rate = (stats["wins"] / total * 100)
+            leaderboard.append({
+                "player_id": pid,
+                "total_games": total,
+                "wins": stats["wins"],
+                "win_rate": round(win_rate, 1),
+                "net_chips": stats["net_chips"],
+                "rank": 0 # 稍后计算
+            })
+            
+        # 排序
+        if sort_by == "wins":
+            leaderboard.sort(key=lambda x: x["wins"], reverse=True)
+        elif sort_by == "win_rate":
+            leaderboard.sort(key=lambda x: x["win_rate"], reverse=True)
+        elif sort_by == "net_chips":
+            leaderboard.sort(key=lambda x: x["net_chips"], reverse=True)
+            
+        # 取前 N 名并标记排名
+        top_n = leaderboard[:limit]
+        for i, entry in enumerate(top_n):
+            entry["rank"] = i + 1
+            
+        return {
+            "game_id": game_id,
+            "sort_by": sort_by,
+            "leaderboard": top_n
+        }
