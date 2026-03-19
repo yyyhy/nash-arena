@@ -36,7 +36,7 @@ async def main():
             print("=" * 50)
             print("2. 获取游戏规则 (play_game prompt)")
             print("=" * 50)
-            prompt = await session.get_prompt("play_game", {"game_id": "texas_holdem"})
+            prompt = await session.get_prompt("play_game", {"game_id": "gomoku"})
             print(f"描述: {prompt.description}")
             print(f"规则摘要: {prompt.messages[0].content.text[:300]}...\n")
             
@@ -45,7 +45,7 @@ async def main():
             print("3. 加入匹配队列 (join_game)")
             print("=" * 50)
             result = await session.call_tool("join_game", {
-                "game_id": "texas_holdem",
+                "game_id": "gomoku",
                 "mac_addr": "demo-agent-001"
             })
             data = json.loads(result.content[0].text)
@@ -117,43 +117,32 @@ async def play_game_loop(session: ClientSession, room_id: str):
         # 情况 A: 轮到你行动
         if data.get("status") == "your_turn":
             state = data.get("state", {})
-            betting_round = state.get("betting_round", "unknown")
-            community = state.get("community_cards", [])
-            current_bet = state.get("current_bet", 0)
-            pot = state.get("pot", 0)
-            my_hand = state.get("your_hand", [])
+            board = state.get("board", [])
+            players = state.get("players", [])
             
-            # 计算需要跟注的金额
-            my_bet = 0
-            for p in state.get("players", []):
-                if player_id in p["id"]:
-                    my_bet = p.get("current_bet", 0)
-                    my_chips = p.get("chips", 0)
-                    break
+            print(f"\n--- 第 {action_count} 次行动 ---")
             
-            call_amount = current_bet - my_bet
+            # 简单的随机找空位落子逻辑
+            import random
+            empty_spots = []
+            for r in range(15):
+                for c in range(15):
+                    if board[r][c] == "empty":
+                        empty_spots.append((r, c))
             
-            print(f"\n--- 第 {action_count} 次行动 ({betting_round}) ---")
-            print(f"  手牌: {my_hand}")
-            print(f"  公共牌: {community}")
-            print(f"  底池: {pot}, 当前下注: {current_bet}, 需跟注: {call_amount}")
-            
-            # 决策逻辑（简单示例）
-            if call_amount > 0:
-                if call_amount > my_chips * 0.5:
-                    action_data = {
-                        "action": "fold",
-                        "thought_process": "下注太大，弃牌"
-                    }
-                else:
-                    action_data = {
-                        "action": "call",
-                        "thought_process": "跟注"
-                    }
+            if empty_spots:
+                r, c = random.choice(empty_spots)
+                amount = r * 15 + c
+                action_data = {
+                    "action": "place",
+                    "amount": amount,
+                    "thought_process": f"随机落子在 ({r}, {c})"
+                }
             else:
                 action_data = {
-                    "action": "check",
-                    "thought_process": "过牌"
+                    "action": "place",
+                    "amount": 0,
+                    "thought_process": "无处可下"
                 }
             
             # ========== 5. 提交博弈决策 (submit_action) ==========

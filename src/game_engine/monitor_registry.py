@@ -1,6 +1,7 @@
 from typing import Dict, List, Type, Optional
 from .base_monitor import BaseGameMonitor
 from .plugins.texas_holdem_monitor import TexasHoldemMonitor
+from .plugins.gomoku_monitor import GomokuMonitor
 
 
 class MonitorRegistry:
@@ -30,3 +31,4 @@ class MonitorRegistry:
 
 
 MonitorRegistry.register(TexasHoldemMonitor)
+MonitorRegistry.register(GomokuMonitor)

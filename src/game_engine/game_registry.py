@@ -1,6 +1,7 @@
 from typing import Dict, List, Type
 from .base_game import BaseMCPGame
 from .plugins.texas_holdem import TexasHoldemGame
+from .plugins.gomoku import Gomoku
 
 
 class GameRegistry:
@@ -28,3 +29,4 @@ class GameRegistry:
 
 
 GameRegistry.register(TexasHoldemGame)
+GameRegistry.register(Gomoku)

@@ -898,6 +898,7 @@
                     <select class="game-select" id="gameSelect">
                         <option value="">所有游戏</option>
                         <option value="texas_holdem">德州扑克</option>
+                        <option value="gomoku">五子棋</option>
                     </select>
                     <button class="btn btn-primary" onclick="searchPlayerStats()">查询</button>
                 </div>
@@ -929,6 +930,7 @@
                 <div class="search-box">
                     <select class="game-select" id="leaderboardGameSelect">
                         <option value="texas_holdem">德州扑克</option>
+                        <option value="gomoku">五子棋</option>
                     </select>
                     <button class="btn btn-primary" onclick="loadLeaderboard()">加载排行榜</button>
                 </div>
@@ -973,6 +975,7 @@
 
         const GameMonitors = {
             texas_holdem: {
+                // ... texas_holdem render function ...
                 render(state, uiConfig) {
                     return `
                         <div class="monitor-header">
@@ -1012,6 +1015,50 @@
                                 `).join('')}
                             </div>
                             
+                            <div class="history-timeline" id="historyTimeline">
+                                <div class="section-title">Action History</div>
+                                ${(state.history || []).map(h => `
+                                    <div class="history-item">
+                                        <span class="history-action">${h}</span>
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+            },
+            gomoku: {
+                render(state, uiConfig) {
+                    if (uiConfig && uiConfig.custom_css) {
+                        let styleId = 'gomoku-styles';
+                        if (!document.getElementById(styleId)) {
+                            const style = document.createElement('style');
+                            style.id = styleId;
+                            style.innerHTML = uiConfig.custom_css;
+                            document.head.appendChild(style);
+                        }
+                    }
+                    
+                    let boardHtml = "";
+                    if (uiConfig && uiConfig.render_script) {
+                        try {
+                            const renderFn = new Function(uiConfig.render_script)();
+                            boardHtml = renderFn(state);
+                        } catch (e) {
+                            console.error("Gomoku render error", e);
+                            boardHtml = "<div>Render Error</div>";
+                        }
+                    }
+                    
+                    return `
+                        <div class="monitor-header">
+                            <div class="monitor-title">
+                                <h2>Gomoku (五子棋)</h2>
+                                <span class="game-badge">15x15</span>
+                            </div>
+                        </div>
+                        <div class="monitor-body">
+                            ${boardHtml}
                             <div class="history-timeline" id="historyTimeline">
                                 <div class="section-title">Action History</div>
                                 ${(state.history || []).map(h => `

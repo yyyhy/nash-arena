@@ -246,9 +246,24 @@ class Matchmaker:
 
         try:
             action_dict = json.loads(action_data)
+            
+            # 支持兼容字典类型的 amount (比如 {"row": 8, "col": 7} 或者 {"position": {"row": 8, "col": 7}})
+            amount_val = action_dict.get("amount", 0)
+            
+            # 特殊处理 Agent 可能传回的 position 字典
+            if "position" in action_dict and isinstance(action_dict["position"], dict):
+                pos = action_dict["position"]
+                row = pos.get("row", 0)
+                col = pos.get("col", 0)
+                # 因为在 Gomoku 中 amount 是通过 row * 15 + col 计算的，我们需要获取棋盘大小
+                # 但这里是通用的 Matchmaker，最安全的方式是把这个 dict 直接透传给 game engine 处理，
+                # 但当前 GameAction.amount 定义为 int，为了兼容五子棋，我们先假设它是个 15x15 的棋盘进行转换
+                # 或者更优雅的是，允许 amount 接收任意类型（Any）
+                amount_val = row * 15 + col
+                
             action = GameAction(
                 action=action_dict.get("action", ""),
-                amount=action_dict.get("amount", 0),
+                amount=amount_val,
                 thought_process=action_dict.get("thought_process", ""),
             )
         except json.JSONDecodeError:
@@ -338,10 +353,13 @@ class Matchmaker:
         self.game_records[game_id].append(record)
         
         for pid, data in results.items():
-            if pid not in self.player_stats:
-                self.player_stats[pid] = {"wins": 0, "total_games": 0, "net_chips": 0}
+            if game_id not in self.player_stats:
+                self.player_stats[game_id] = {}
+                
+            if pid not in self.player_stats[game_id]:
+                self.player_stats[game_id][pid] = {"wins": 0, "total_games": 0, "net_chips": 0}
             
-            stats = self.player_stats[pid]
+            stats = self.player_stats[game_id][pid]
             stats["total_games"] += 1
             if pid == room.game.winner:
                 stats["wins"] += 1
@@ -360,7 +378,19 @@ class Matchmaker:
         return self.rooms.get(room_id)
 
     def get_player_stats(self, player_id: str, game_id: Optional[str] = None) -> Optional[Dict]:
-        stats = self.player_stats.get(player_id, {"wins": 0, "total_games": 0, "net_chips": 0})
+        if game_id:
+            game_stats = self.player_stats.get(game_id, {})
+            stats = game_stats.get(player_id, {"wins": 0, "total_games": 0, "net_chips": 0})
+        else:
+            # 聚合所有游戏的战绩
+            stats = {"wins": 0, "total_games": 0, "net_chips": 0}
+            for gid, g_stats in self.player_stats.items():
+                if player_id in g_stats:
+                    p_stat = g_stats[player_id]
+                    stats["wins"] += p_stat["wins"]
+                    stats["total_games"] += p_stat["total_games"]
+                    stats["net_chips"] += p_stat["net_chips"]
+                    
         total = stats["total_games"]
         win_rate = (stats["wins"] / total * 100) if total > 0 else 0.0
         
@@ -400,9 +430,10 @@ class Matchmaker:
 
     def get_leaderboard(self, game_id: str, sort_by: str = "wins", limit: int = 10) -> Dict:
         # 从 player_stats 构建排行榜
-        # 注意：这里我们简单遍历所有玩家，实际生产中应该按游戏分别统计
         leaderboard = []
-        for pid, stats in self.player_stats.items():
+        game_stats = self.player_stats.get(game_id, {})
+        
+        for pid, stats in game_stats.items():
             total = stats["total_games"]
             if total == 0: continue
             
