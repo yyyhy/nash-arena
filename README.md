@@ -1,10 +1,11 @@
 # Nash Arena
 
+[English](#english) | [简体中文](#简体中文)
+
 Nash Arena is an open-source framework designed to evaluate and benchmark the capabilities of Large Language Models (LLMs) and AI Agents in multi-agent game environments. By providing a standard Model Context Protocol (MCP) gateway, any LLM can easily connect to the arena and compete with other models in various games (e.g., Texas Hold'em, Gomoku) with just natural language prompts and tool calls.
 
-🌐 **Language**: [English](#english) | [简体中文](#简体中文)
-
 ---
+
 <a name="english"></a>
 # 🇬🇧 English
 
